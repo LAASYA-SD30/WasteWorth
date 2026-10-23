@@ -1,0 +1,1071 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fff0f5">
+  <meta name="description" content="WasteWorth AI identifies waste materials using a locally running pretrained model.">
+  <title>WasteWorth AI — WasteVision</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --pink-100: #fff0f5;
+      --pink-200: #f3b3c1;
+      --pink-300: #e98fa3;
+      --pink-400: #f7588f;
+      --pink-500: #e44d6d;
+      --pink-600: #c9184a;
+      --ink: #25121c;
+      --muted: #846b77;
+      --border: rgba(201,24,74,.16);
+      --white: #fffdfd;
+      --shadow: 0 22px 65px rgba(151,35,79,.10);
+      --serif: "Playfair Display", Georgia, serif;
+      --sans: "DM Sans", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--sans);
+      background:
+        radial-gradient(ellipse at 8% 8%, rgba(247,88,143,.15), transparent 34%),
+        radial-gradient(ellipse at 95% 35%, rgba(233,143,163,.19), transparent 36%),
+        linear-gradient(145deg,#fffafd 0%,#fff0f5 48%,#fff8fb 100%);
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px clamp(20px,5vw,78px);
+      background: rgba(255,253,253,.90);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      width: 39px;
+      height: 39px;
+      display: grid;
+      place-items: center;
+      color: white;
+      border-radius: 13px;
+      background: linear-gradient(135deg,var(--pink-300),var(--pink-600));
+      box-shadow: 0 8px 22px rgba(201,24,74,.23);
+      transition: transform .25s ease;
+    }
+
+    .brand:hover .brand-mark { transform: rotate(-9deg) scale(1.07); }
+    .brand-name { font-family: var(--serif); }
+    .brand-name span { color: var(--pink-600); }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: white;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #25a56a;
+    }
+
+    .hero {
+      width: min(1120px,calc(100% - 36px));
+      margin: 62px auto 52px;
+      display: grid;
+      grid-template-columns: 1fr .9fr;
+      align-items: center;
+      gap: clamp(32px,6vw,78px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 22px;
+      color: var(--pink-600);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 26px;
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg,var(--pink-300),var(--pink-600));
+    }
+
+    h1,h2,h3,.serif {
+      font-family: var(--serif);
+      letter-spacing: -.045em;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 620px;
+      font-size: clamp(43px,6vw,76px);
+      line-height: 1.04;
+    }
+
+    h1 em { color: var(--pink-600); }
+
+    .hero-copy {
+      max-width: 510px;
+      margin: 22px 0 28px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    .hero-pills { display: flex; flex-wrap: wrap; gap: 9px; }
+
+    .pill {
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      color: #77515f;
+      font-size: 11px;
+      font-weight: 600;
+      transition: transform .2s,background .2s,box-shadow .2s;
+    }
+
+    .pill:hover {
+      transform: translateY(-3px);
+      background: white;
+      box-shadow: 0 8px 18px rgba(201,24,74,.10);
+    }
+
+    .form-card {
+      position: relative;
+      overflow: hidden;
+      padding: 25px;
+      border: 1px solid rgba(201,24,74,.22);
+      border-radius: 24px;
+      background: rgba(255,255,255,.90);
+      box-shadow: var(--shadow);
+      transition: transform .3s,box-shadow .3s;
+    }
+
+    .form-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 5px;
+      background: linear-gradient(90deg,var(--pink-200),var(--pink-400),var(--pink-600));
+    }
+
+    .form-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 28px 75px rgba(151,35,79,.15);
+    }
+
+    .card-heading { margin-bottom: 21px; }
+    .card-heading h2 { margin: 0 0 6px; font-size: 27px; }
+    .card-heading p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+    .upload-area {
+      display: block;
+      padding: 20px 14px;
+      border: 1.5px dashed var(--pink-300);
+      border-radius: 16px;
+      background: linear-gradient(140deg,#fff5f8,#ffe8ef);
+      text-align: center;
+      transition: .2s;
+      cursor: pointer;
+    }
+
+    .upload-area:hover,.upload-area.dragover {
+      border-color: var(--pink-600);
+      background: linear-gradient(140deg,#ffeaf1,#ffdce7);
+      transform: translateY(-2px);
+    }
+
+    .upload-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 10px;
+      border-radius: 14px;
+      color: var(--pink-600);
+      background: white;
+      font-size: 21px;
+      box-shadow: 0 7px 17px rgba(201,24,74,.10);
+    }
+
+    .upload-title { font-size: 13px; font-weight: 700; }
+    .upload-hint { margin-top: 5px; color: var(--muted); font-size: 10px; }
+    #imageInput { display: none; }
+
+    .preview {
+      display: none;
+      width: 100%;
+      max-height: 220px;
+      margin-top: 13px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .field { margin-top: 18px; }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .field input {
+      width: 100%;
+      min-width: 0;
+      padding: 12px 13px;
+      outline: none;
+      border: 1px solid #f1d4df;
+      border-radius: 11px;
+      background: #fffdfd;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .field input:focus {
+      border-color: var(--pink-400);
+      box-shadow: 0 0 0 4px rgba(247,88,143,.11);
+    }
+
+    .field small {
+      display: block;
+      margin-top: 7px;
+      color: #9a8290;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .field-row,.rate-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    details {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    summary {
+      color: var(--pink-600);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary-button {
+      width: 100%;
+      margin-top: 19px;
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 12px;
+      color: white;
+      background: linear-gradient(110deg,#f5a0b7,#f7588f 48%,#c9184a);
+      box-shadow: 0 11px 23px rgba(201,24,74,.20);
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform .22s,box-shadow .22s;
+    }
+
+    .primary-button:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 30px rgba(201,24,74,.28);
+    }
+
+    .primary-button:disabled { opacity: .65; cursor: wait; }
+
+    .message {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      font-size: 11px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .message.error { display: block; color: #b42346; background: #fff1f3; }
+    .message.success { display: block; color: #176b48; background: #ecfff5; border-color: #b5ebd0; }
+    .fine-print { margin-top: 12px; color: #9a8290; font-size: 10px; line-height: 1.7; }
+
+    .results {
+      display: none;
+      width: min(1120px,calc(100% - 36px));
+      margin: 0 auto 65px;
+      scroll-margin-top: 95px;
+    }
+
+    .results-heading { margin-bottom: 18px; }
+    .results-heading h2 { margin: 0 0 7px; font-size: 35px; }
+    .results-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .value-card {
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,.90);
+      box-shadow: 0 8px 28px rgba(151,35,79,.06);
+      transition: transform .2s;
+    }
+
+    .value-card:hover { transform: translateY(-4px); }
+    .value-label { color: var(--muted); font-size: 11px; }
+    .value-number { margin-top: 9px; font-size: clamp(20px,3vw,29px); font-weight: 700; letter-spacing: -.05em; }
+    .value-number small { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+    .results-panel {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255,255,255,.90);
+      box-shadow: var(--shadow);
+    }
+
+    .results-panel h3 { margin: 0 0 13px; font-size: 25px; }
+    .scene-summary { margin-bottom: 22px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+
+    .item-card { padding: 18px 0; border-top: 1px solid var(--border); }
+
+    .item-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .item-title-row h4 { margin: 0 0 6px; font-size: 15px; }
+    .item-title-row p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+
+    .confidence {
+      flex-shrink: 0;
+      padding: 7px 10px;
+      border-radius: 999px;
+      color: #a21b4a;
+      background: #ffedf3;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .item-metrics { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 13px; }
+
+    .metric {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #fffafd;
+      color: #755362;
+      font-size: 10px;
+    }
+
+    .flags { margin-top: 11px; color: #a15a19; font-size: 11px; line-height: 1.7; }
+
+    .secondary-button {
+      margin-top: 17px;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--pink-600);
+      background: white;
+      font-size: 11px;
+      font-weight: 700;
+      transition: transform .2s,background .2s;
+    }
+
+    .secondary-button:hover { transform: translateY(-2px); background: #fff0f5; }
+
+    .steps-section {
+      width: min(1120px,calc(100% - 36px));
+      margin: 0 auto 70px;
+    }
+
+    .steps-section h2 { margin: 0 0 9px; font-size: clamp(30px,4vw,42px); }
+    .steps-section > p { margin: 0 0 26px; color: var(--muted); font-size: 13px; }
+
+    .steps-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+
+    .step-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,.75);
+      transition: transform .25s,box-shadow .25s;
+    }
+
+    .step-card:hover {
+      transform: translateY(-5px);
+      background: white;
+      box-shadow: 0 14px 34px rgba(151,35,79,.09);
+    }
+
+    .step-number { margin-bottom: 10px; color: var(--pink-600); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+    .step-card h3 { margin: 0 0 7px; font-size: 19px; }
+    .step-card p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+
+    footer {
+      padding: 25px 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+    }
+
+    footer strong { color: var(--pink-600); font-family: var(--serif); }
+
+    @media(max-width:800px) {
+      .hero { grid-template-columns: 1fr; margin-top: 40px; gap: 35px; }
+      .form-card { max-width: 600px; width: 100%; }
+    }
+
+    @media(max-width:540px) {
+      .topbar { padding: 12px 17px; }
+      .brand { font-size: 14px; }
+      .status { font-size: 8px; padding: 7px 9px; }
+      .hero { width: calc(100% - 28px); margin-top: 32px; }
+      h1 { font-size: clamp(42px,13vw,60px); }
+      .form-card { padding: 19px; border-radius: 19px; }
+      .field-row,.rate-grid,.value-grid,.steps-grid { grid-template-columns: 1fr; }
+      .results-panel { padding: 18px; }
+      .item-title-row { flex-direction: column; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      *,*::before,*::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">♻</div>
+      <div class="brand-name">WasteWorth <span>AI</span></div>
+    </div>
+    <div class="status"><span class="status-dot"></span> Local model analysis</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <div class="eyebrow">WasteVision · A cleaner future</div>
+        <h1>Waste has a story. <em>Discover its worth.</em></h1>
+        <p class="hero-copy">
+          Turn a waste photo into useful material insights.
+          Identify possible recyclable materials, explore indicative values,
+          and make more informed recovery decisions.
+        </p>
+        <div class="hero-pills">
+          <span class="pill">✦ Pretrained model</span>
+          <span class="pill">♻ Recycling insights</span>
+          <span class="pill">₹ Indicative valuation</span>
+        </div>
+      </div>
+
+      <section class="form-card" aria-labelledby="analysisTitle">
+        <div class="card-heading">
+          <h2 id="analysisTitle">Discover its value</h2>
+          <p>Upload a photo to begin your waste assessment.</p>
+        </div>
+
+        <form id="analysisForm">
+          <label class="upload-area" id="uploadArea" for="imageInput">
+            <div class="upload-icon">↥</div>
+            <div class="upload-title" id="uploadTitle">Drop your image here</div>
+            <div class="upload-hint" id="uploadHint">or click to browse · JPG, PNG, WEBP · max 10 MB</div>
+            <img id="preview" class="preview" alt="Selected waste image preview">
+          </label>
+          <input id="imageInput" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required>
+
+          <div class="field">
+            <label for="handlingCost">Handling / transport cost (₹ per kg)</label>
+            <input id="handlingCost" name="handling_cost" type="number" min="0" step="0.01" value="0">
+            <small>Used to calculate an indicative net value per kilogram.</small>
+          </div>
+
+          <details>
+            <summary>✦ Customise material rates</summary>
+            <p class="fine-print">Illustrative ₹/kg values only. You can change rates before analysis.</p>
+            <div class="rate-grid" id="rateGrid"></div>
+          </details>
+
+          <button class="primary-button" id="analyseButton" type="submit">Analyse waste ↗</button>
+          <div class="message" id="message" role="status" aria-live="polite"></div>
+          <p class="fine-print">
+            Uses a pretrained model running through your local backend.
+            No AI API key is required. Image predictions and prices are estimates.
+          </p>
+        </form>
+      </section>
+    </section>
+
+    <section class="results" id="results" aria-live="polite">
+      <div class="results-heading">
+        <div class="eyebrow">Your assessment</div>
+        <h2>From image to insight.</h2>
+        <p>Review the predicted material, indicative rate, and recovery advice.</p>
+      </div>
+
+      <div class="value-grid" id="valueGrid"></div>
+
+      <div class="results-panel">
+        <h3>Material breakdown</h3>
+        <p class="scene-summary" id="sceneSummary"></p>
+        <div id="itemsContainer"></div>
+        <button class="secondary-button" id="downloadButton" type="button">Download assessment JSON ↓</button>
+      </div>
+    </section>
+
+    <section class="steps-section">
+      <div class="eyebrow">Simple by design</div>
+      <h2>From image to insight.</h2>
+      <p>Three steps to a more informed waste recovery decision.</p>
+      <div class="steps-grid">
+        <article class="step-card">
+          <div class="step-number">01 · UPLOAD</div>
+          <h3>Share a photo</h3>
+          <p>Choose a clear picture of the waste or reusable items you want to assess.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-number">02 · ANALYSE</div>
+          <h3>Identify materials</h3>
+          <p>A pretrained model compares the image against possible material categories.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-number">03 · EVALUATE</div>
+          <h3>Explore recovery</h3>
+          <p>Review indicative rates and practical recommendations for disposal or recycling.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>WasteWorth AI</strong> · WasteVision — AI for a Cleaner Future
+  </footer>
+
+  <script>
+    const form = document.getElementById("analysisForm");
+    const imageInput = document.getElementById("imageInput");
+    const uploadArea = document.getElementById("uploadArea");
+    const preview = document.getElementById("preview");
+    const uploadTitle = document.getElementById("uploadTitle");
+    const uploadHint = document.getElementById("uploadHint");
+    const button = document.getElementById("analyseButton");
+    const message = document.getElementById("message");
+    const results = document.getElementById("results");
+
+    let currentReport = null;
+    let previewUrl = null;
+
+    const rateLabels = {
+      plastic: "Plastic",
+      paper: "Paper",
+      cardboard: "Cardboard",
+      glass: "Glass",
+      metal: "Metal",
+      aluminium: "Aluminium",
+      steel: "Steel",
+      organic: "Organic waste",
+      food: "Food waste",
+      electronic: "Electronic waste",
+      textile: "Textile",
+      wood: "Wood",
+      rubber: "Rubber",
+      battery: "Battery",
+      mixed: "Mixed waste"
+    };
+
+    const defaultRates = {
+      plastic: 15,
+      paper: 12,
+      cardboard: 10,
+      glass: 3,
+      metal: 35,
+      aluminium: 100,
+      steel: 25,
+      organic: 0,
+      food: 0,
+      electronic: 20,
+      textile: 5,
+      wood: 5,
+      rubber: 5,
+      battery: 0,
+      mixed: 0
+    };
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function numberOrNull(value) {
+      if (value === null || value === undefined || value === "") return null;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function formatINR(value) {
+      const number = numberOrNull(value);
+      if (number === null) return "Not available";
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 2
+      }).format(number);
+    }
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message ${type}`;
+    }
+
+    function clearMessage() {
+      message.textContent = "";
+      message.className = "message";
+    }
+
+    function renderRateFields() {
+      document.getElementById("rateGrid").innerHTML =
+        Object.entries(defaultRates).map(([key, value]) => `
+          <div class="field" style="margin-top:0">
+            <label for="rate-${key}">${escapeHTML(rateLabels[key])} (₹/kg)</label>
+            <input id="rate-${key}" type="number" min="0" step="0.01"
+                   data-rate="${key}" value="${value}">
+          </div>
+        `).join("");
+    }
+
+    function collectCustomRates() {
+      const rates = {};
+
+      document.querySelectorAll("[data-rate]").forEach(input => {
+        const value = Number(input.value);
+
+        if (!Number.isFinite(value) || value < 0) {
+          throw new Error(`Enter a valid rate for ${rateLabels[input.dataset.rate]}.`);
+        }
+
+        if (value !== defaultRates[input.dataset.rate]) {
+          rates[input.dataset.rate] = value;
+        }
+      });
+
+      return rates;
+    }
+
+    function setPreview(file) {
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        showMessage("Please choose an image file.", "error");
+        imageInput.value = "";
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        showMessage("The image must be smaller than 10 MB.", "error");
+        imageInput.value = "";
+        return;
+      }
+
+      clearMessage();
+
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file);
+
+      preview.src = previewUrl;
+      preview.style.display = "block";
+      uploadTitle.textContent = file.name;
+      uploadHint.textContent = "Image selected · click to change";
+    }
+
+    imageInput.addEventListener("change", () => setPreview(imageInput.files[0]));
+
+    ["dragenter", "dragover"].forEach(eventName => {
+      uploadArea.addEventListener(eventName, event => {
+        event.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(eventName => {
+      uploadArea.addEventListener(eventName, event => {
+        event.preventDefault();
+        uploadArea.classList.remove("dragover");
+      });
+    });
+
+    uploadArea.addEventListener("drop", event => {
+      const file = event.dataTransfer.files[0];
+      if (!file) return;
+
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      imageInput.files = transfer.files;
+      setPreview(file);
+    });
+
+    function normalizeResponse(data, handlingCost, customRates) {
+      /*
+       * Supports the current local CLIP backend response.
+       * Also accepts the older response structure to avoid breaking
+       * a backend that has not yet been updated.
+       */
+      if (data && data.material) {
+        const material = String(data.material).toLowerCase();
+        const category = rateLabels[material] ? material : "mixed";
+        const rate = numberOrNull(data.rate_per_kg) ??
+                     numberOrNull(customRates[category]) ??
+                     defaultRates[category];
+
+        const confidence = numberOrNull(data.confidence_percent) ??
+          ((numberOrNull(data.confidence) ?? 0) * 100);
+
+        const predictions = Array.isArray(data.top_predictions)
+          ? data.top_predictions
+          : [];
+
+        const items = [{
+          item_name: rateLabels[category] || category,
+          material_category: category,
+          condition: "Visual estimate",
+          confidence: confidence,
+          rate_per_kg_inr: rate,
+          recommended_action: data.disposal_recommendation ||
+            "Separate the material and check local recycling guidelines.",
+          visible_evidence: "Predicted by a pretrained image-classification model.",
+          safety_flags: []
+        }];
+
+        const topPredictions = predictions.map(p => ({
+          material: p.material || p.label || "Other",
+          confidence: numberOrNull(p.confidence) ??
+            (numberOrNull(p.score) !== null
+              ? Number(p.score) * 100
+              : 0)
+        }));
+
+        return {
+          scene_summary:
+            `The pretrained model's top prediction is ${rateLabels[category] || category}. ` +
+            `Reported model score: ${confidence.toFixed(2)}%. ` +
+            `This is a classification score, not a guarantee of accuracy.`,
+          items,
+          grossValue: null,
+          netValue: null,
+          handlingCost,
+          category,
+          rate,
+          confidence,
+          predictions: topPredictions,
+          notice: data.notice || "Values are indicative only.",
+          raw: data
+        };
+      }
+
+      // Backward compatibility with the old frontend/backend format.
+      const oldValuation = data?.valuation || {};
+      const oldItems = Array.isArray(data?.items) ? data.items : [];
+
+      return {
+        scene_summary: data?.scene_summary || "Analysis completed.",
+        items: oldItems,
+        grossValue: numberOrNull(oldValuation.estimated_gross_value_low_inr),
+        netValue: numberOrNull(oldValuation.estimated_net_value_low_inr),
+        handlingCost: numberOrNull(oldValuation.handling_cost_inr) ?? handlingCost,
+        category: oldItems[0]?.material_category || "mixed",
+        rate: numberOrNull(oldItems[0]?.rate_per_kg_inr),
+        confidence: numberOrNull(oldItems[0]?.confidence),
+        predictions: [],
+        notice: data?.notice || "",
+        raw: data
+      };
+    }
+
+    function renderResults(data, handlingCost, customRates) {
+      currentReport = data;
+
+      const normalized = normalizeResponse(data, handlingCost, customRates);
+      const item = normalized.items[0];
+      const category = normalized.category || "mixed";
+      const rate = numberOrNull(normalized.rate) ??
+        numberOrNull(customRates[category]) ??
+        defaultRates[category] ??
+        0;
+
+      const netPerKg = rate - handlingCost;
+
+      document.getElementById("valueGrid").innerHTML = `
+        <article class="value-card">
+          <div class="value-label">Indicative material rate</div>
+          <div class="value-number">${formatINR(rate)}<small> / kg</small></div>
+        </article>
+        <article class="value-card">
+          <div class="value-label">Handling / transport per kg</div>
+          <div class="value-number">${formatINR(handlingCost)}</div>
+        </article>
+        <article class="value-card">
+          <div class="value-label">Indicative net value per kg</div>
+          <div class="value-number">${formatINR(netPerKg)}</div>
+        </article>
+      `;
+
+      document.getElementById("sceneSummary").textContent =
+        normalized.scene_summary;
+
+      const confidenceValue = numberOrNull(normalized.confidence);
+      const confidencePercent = confidenceValue === null
+        ? null
+        : Math.max(0, Math.min(100,
+            confidenceValue <= 1 ? confidenceValue * 100 : confidenceValue
+          ));
+
+      let html = "";
+
+      if (item) {
+        const categoryName = rateLabels[item.material_category] ||
+          String(item.material_category || "mixed").replaceAll("_", " ");
+
+        const itemConfidence = numberOrNull(item.confidence);
+        const itemConfidencePercent = itemConfidence === null
+          ? confidencePercent
+          : Math.max(0, Math.min(100,
+              itemConfidence <= 1 ? itemConfidence * 100 : itemConfidence
+            ));
+
+        html += `
+          <article class="item-card">
+            <div class="item-title-row">
+              <div>
+                <h4>${escapeHTML(item.item_name || categoryName)}</h4>
+                <p>${escapeHTML(categoryName)} · Visual classification</p>
+                <p style="margin-top:7px">${escapeHTML(item.visible_evidence || "")}</p>
+              </div>
+              <span class="confidence">${
+                itemConfidencePercent === null
+                  ? "Confidence unavailable"
+                  : `${itemConfidencePercent.toFixed(2)}% model score`
+              }</span>
+            </div>
+
+            <div class="item-metrics">
+              <span class="metric">Rate: ${formatINR(item.rate_per_kg_inr ?? rate)}/kg</span>
+              <span class="metric">Net after handling: ${formatINR(netPerKg)}/kg</span>
+              <span class="metric">Weight: Not measured</span>
+            </div>
+
+            <p style="margin:12px 0 0;font-size:12px;line-height:1.7">
+              <strong>Suggested action:</strong>
+              ${escapeHTML(item.recommended_action || "Check local recycling guidelines.")}
+            </p>
+          </article>
+        `;
+      }
+
+      if (normalized.predictions.length) {
+        html += `
+          <article class="item-card">
+            <h4>Other possible material matches</h4>
+            <p style="color:var(--muted);font-size:11px;line-height:1.8">
+              These are model scores for alternative labels, not verified probabilities.
+            </p>
+            <div class="item-metrics">
+              ${normalized.predictions.slice(0, 5).map(p => `
+                <span class="metric">
+                  ${escapeHTML(rateLabels[String(p.material).toLowerCase()] || p.material)}:
+                  ${Number(p.confidence || 0).toFixed(2)}%
+                </span>
+              `).join("")}
+            </div>
+          </article>
+        `;
+      }
+
+      html += `
+        <p class="fine-print">
+          ${escapeHTML(normalized.notice)}
+          The model does not measure waste weight from the image. Enter a known
+          weight separately before calculating a total sale value.
+        </p>
+      `;
+
+      document.getElementById("itemsContainer").innerHTML = html;
+      results.style.display = "block";
+      results.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      // Save a consistent report for JSON export.
+      currentReport = {
+        application: "WasteWorth AI",
+        analysis_type: "local_pretrained_image_classification",
+        model: data.model || "Local pretrained model",
+        material: category,
+        confidence_percent: confidencePercent,
+        rate_per_kg_inr: rate,
+        handling_cost_per_kg_inr: handlingCost,
+        net_value_per_kg_inr: netPerKg,
+        weight_kg: null,
+        total_value_inr: null,
+        scene_summary: normalized.scene_summary,
+        items: normalized.items,
+        top_predictions: normalized.predictions,
+        notice: normalized.notice
+      };
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      clearMessage();
+
+      const file = imageInput.files[0];
+
+      if (!file) {
+        showMessage("Please upload a waste image first.", "error");
+        return;
+      }
+
+      const handlingCost = Number(
+        document.getElementById("handlingCost").value || 0
+      );
+
+      if (!Number.isFinite(handlingCost) || handlingCost < 0) {
+        showMessage("Enter a valid non-negative handling cost.", "error");
+        return;
+      }
+
+      let customRates;
+
+      try {
+        customRates = collectCustomRates();
+      } catch (error) {
+        showMessage(error.message, "error");
+        return;
+      }
+
+      const payload = new FormData();
+      payload.append("image", file);
+
+      // Keep compatibility with the existing FastAPI endpoint.
+      // The local backend ignores this value and uses its fixed model.
+      payload.append("model", "");
+      payload.append("handling_cost", String(handlingCost));
+      payload.append("custom_rates", JSON.stringify(customRates));
+
+      button.disabled = true;
+      button.textContent = "Analysing image locally…";
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          body: payload
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data.detail || `Analysis failed (HTTP ${response.status}).`
+          );
+        }
+
+        renderResults(data, handlingCost, customRates);
+        showMessage(
+          "Analysis completed. Review the model prediction and its limitations below.",
+          "success"
+        );
+      } catch (error) {
+        showMessage(
+          error.message || "Unable to connect to the local analysis service.",
+          "error"
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = "Analyse waste ↗";
+      }
+    });
+
+    document.getElementById("downloadButton").addEventListener("click", () => {
+      if (!currentReport) return;
+
+      const blob = new Blob(
+        [JSON.stringify(currentReport, null, 2)],
+        { type: "application/json" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "wasteworth-assessment.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    renderRateFields();
+  </script>
+</body>
+</html>
