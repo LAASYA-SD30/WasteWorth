@@ -1,8 +1,5 @@
 
-fastapi
-uvicorn[standard]
-python-multipart
-pillow
-python-dotenv
-torch
-transformers
+streamlit
+transformers==4.46.3
+Pillow
+torch==2.5.1
